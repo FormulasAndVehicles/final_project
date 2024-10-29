@@ -3,7 +3,8 @@ import math
 
 import rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from hippo_msgs.msg import ActuatorSetpoint, Float64Stamped
+from hippo_control_msgs.msg import ActuatorSetpoint
+from hippo_msgs.msg import Float64Stamped
 from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from tf_transformations import euler_from_quaternion

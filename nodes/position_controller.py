@@ -4,7 +4,7 @@ import math
 
 import rclpy
 from geometry_msgs.msg import Point, PointStamped, PoseWithCovarianceStamped
-from hippo_msgs.msg import ActuatorSetpoint
+from hippo_control_msgs.msg import ActuatorSetpoint
 from rclpy.node import Node
 from tf_transformations import euler_from_quaternion
 
