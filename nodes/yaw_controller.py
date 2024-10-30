@@ -3,8 +3,7 @@ import math
 
 import rclpy
 from geometry_msgs.msg import PoseWithCovarianceStamped
-from hippo_control_msgs.msg import ActuatorSetpoint
-from hippo_msgs.msg import Float64Stamped
+from hippo_control_msgs.msg import ActuatorSetpoint, YawTarget
 from rclpy.node import Node
 from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from tf_transformations import euler_from_quaternion
@@ -27,7 +26,7 @@ class YawController(Node):
             topic='vision_pose_cov',
             callback=self.on_vision_pose,
             qos_profile=qos)
-        self.setpoint_sub = self.create_subscription(Float64Stamped,
+        self.setpoint_sub = self.create_subscription(YawTarget,
                                                      topic='~/setpoint',
                                                      callback=self.on_setpoint,
                                                      qos_profile=qos)
@@ -50,12 +49,12 @@ class YawController(Node):
         num_wraps = math.floor((value + math.pi) / range)
         return value - range * num_wraps
 
-    def on_setpoint(self, msg: Float64Stamped):
+    def on_setpoint(self, msg: YawTarget):
         self.timeout_timer.reset()
         if self.setpoint_timed_out:
             self.get_logger().info('Setpoint received! Getting back to work.')
         self.setpoint_timed_out = False
-        self.setpoint = self.wrap_pi(msg.data)
+        self.setpoint = self.wrap_pi(msg.yaw_target)
 
     def on_vision_pose(self, msg: PoseWithCovarianceStamped):
         if self.setpoint_timed_out:

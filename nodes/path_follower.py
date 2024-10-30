@@ -6,7 +6,7 @@ from geometry_msgs.msg import (
     PoseStamped,
     PoseWithCovarianceStamped,
 )
-from hippo_msgs.msg import Float64Stamped
+from hippo_control_msgs.msg import YawTarget
 from nav_msgs.msg import Path
 from rclpy.node import Node
 from scenario_msgs.srv import SetPath
@@ -22,7 +22,7 @@ class PathFollower(Node):
         self.pose_sub = self.create_subscription(PoseWithCovarianceStamped,
                                                  'vision_pose_cov',
                                                  self.on_pose, 1)
-        self.yaw_pub = self.create_publisher(Float64Stamped,
+        self.yaw_pub = self.create_publisher(YawTarget,
                                              'yaw_controller/setpoint', 1)
         self.position_pub = self.create_publisher(
             PointStamped, 'position_controller/setpoint', 1)
@@ -60,13 +60,13 @@ class PathFollower(Node):
 
         stamp = self.get_clock().now().to_msg()
 
-        msg = Float64Stamped()
-        msg.data = self.target_yaw
+        msg = YawTarget()
+        msg.yaw_target = self.yaw_target
         msg.header.stamp = stamp
         msg.header.frame_id = 'map'
         self.yaw_pub.publish(msg)
 
-        msg = PointStamped(header=msg.header, point=self.target_position)
+        msg = PointStamped(header=msg.header, point=self.position_target)
         self.position_pub.publish(msg)
         if self.path:
             msg = Path()
@@ -81,8 +81,8 @@ class PathFollower(Node):
         look_ahead_square = self.look_ahead_distance**2
         if not self.path:
             self.target_index = 0
-            self.target_position = None
-            self.target_yaw = None
+            self.position_target = None
+            self.yaw_target = None
             return False
         while True:
             target_position = self.path[index].pose.position
@@ -97,9 +97,9 @@ class PathFollower(Node):
                 self.target_index = len(self.path) - 1
                 break
         target_pose = self.path[self.target_index].pose
-        self.target_position = target_pose.position
+        self.position_target = target_pose.position
         q = target_pose.orientation
-        _, _, self.target_yaw = euler_from_quaternion([q.x, q.y, q.z, q.w])
+        _, _, self.yaw_target = euler_from_quaternion([q.x, q.y, q.z, q.w])
         return True
 
 
