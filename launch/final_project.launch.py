@@ -1,5 +1,6 @@
 from ament_index_python.packages import get_package_share_path
 from launch_ros.actions import Node, PushROSNamespace
+from launch.conditions import IfCondition, UnlessCondition
 
 from launch import LaunchDescription
 from launch.actions import (
@@ -15,6 +16,11 @@ def generate_launch_description() -> LaunchDescription:
     launch_description.add_action(arg)
 
     arg = DeclareLaunchArgument('use_sim_time')
+    launch_description.add_action(arg)
+
+    arg = DeclareLaunchArgument('use_scenario',
+        default_value='false',
+        description='Set to false during final project event, when scenario is provided by MuM')
     launch_description.add_action(arg)
 
     package_path = get_package_share_path('final_project')
@@ -77,9 +83,10 @@ def generate_launch_description() -> LaunchDescription:
             parameters=[
                 {
                     'scenario': LaunchConfiguration('scenario'),
-                    'use_sim_time': LaunchConfiguration('use_sim_time'),
+                    'use_sim_time': LaunchConfiguration('use_sim_time')
                 },
             ],
+            condition=IfCondition(LaunchConfiguration('use_scenario')),
         ),
         Node(
             executable='robot_marker_publisher',
@@ -92,15 +99,44 @@ def generate_launch_description() -> LaunchDescription:
         ),
     ])
     launch_description.add_action(group)
-    rviz_file = str(
-        get_package_share_path('final_project') / 'config/rviz.rviz')
 
-    action = Node(
-        executable='rviz2',
-        package='rviz2',
-        name='rviz2',
-        arguments=['-d', rviz_file, '--ros-args', '--log-level', 'error'],
+    rviz_file_sim = str(
+        get_package_share_path('final_project') / 'config/rviz.rviz'
     )
-    launch_description.add_action(action)
+    rviz_file_experiment = str(
+        get_package_share_path('final_project')
+        / 'config/rviz_experiment.rviz'
+    )
+    group = GroupAction(
+        [
+            Node(
+                executable='rviz2',
+                package='rviz2',
+                name='rviz2',
+                arguments=[
+                    '-d',
+                    rviz_file_sim,
+                    '--ros-args',
+                    '--log-level',
+                    'error',
+                ],
+                condition=IfCondition(LaunchConfiguration('use_sim_time')),
+            ),
+            Node(
+                executable='rviz2',
+                package='rviz2',
+                name='rviz2',
+                arguments=[
+                    '-d',
+                    rviz_file_experiment,
+                    '--ros-args',
+                    '--log-level',
+                    'error',
+                ],
+                condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
+            ),
+        ]
+    )
+    launch_description.add_action(group)
 
     return launch_description
